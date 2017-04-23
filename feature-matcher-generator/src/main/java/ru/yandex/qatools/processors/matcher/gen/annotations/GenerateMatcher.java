@@ -2,13 +2,10 @@ package ru.yandex.qatools.processors.matcher.gen.annotations;
 
 import ru.yandex.qatools.processors.matcher.gen.MatchersGenProperties;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
- * Source annotation to find fields to generate {@link org.hamcrest.FeatureMatcher} for it.
+ * Source annotation to find properties to generate {@link org.hamcrest.FeatureMatcher} for it.
  * This annotation specified by default in properties. You can use your own instead
  *
  * @author lanwen (Merkushev Kirill)

@@ -2,26 +2,16 @@ package ru.yandex.qatools.processors.matcher.gen;
 
 import com.squareup.javapoet.JavaFile;
 import ru.yandex.qatools.processors.matcher.gen.bean.ClassSpecDescription;
-import ru.yandex.qatools.processors.matcher.gen.processing.ProcessingException;
-import ru.yandex.qatools.processors.matcher.gen.processing.ProcessingPredicates;
+import ru.yandex.qatools.processors.matcher.gen.processing.*;
 
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedSourceVersion;
+import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
@@ -62,18 +52,18 @@ public class MatcherFactoryGenerator extends AbstractProcessor {
                 return false;
             }
 
-            List<Element> fields = new LinkedList<>();
+            List<Element> properties = new LinkedList<>();
 
             for (TypeElement annotation : annotations) {
                 LOGGER.info(format("Work with %s...", annotation.getQualifiedName()));
                 roundEnv.getElementsAnnotatedWith(annotation)
                         .stream()
-                        .flatMap(MatcherFactoryGenerator::asFields)
+                        .flatMap(MatcherFactoryGenerator::asProperty)
                         .filter(ProcessingPredicates.shouldGenerateMatcher())
-                        .forEach(fields::add);
+                        .forEach(properties::add);
             }
 
-            Map<Element, ClassSpecDescription> classes = groupedClasses(fields);
+            Map<Element, ClassSpecDescription> classes = groupedClasses(properties);
 
             LOGGER.info(format("Got %s classes to generate matchers. Writing them...", classes.size()));
 
@@ -92,8 +82,9 @@ public class MatcherFactoryGenerator extends AbstractProcessor {
         return false;
     }
 
-    static Map<Element, ClassSpecDescription> groupedClasses(List<Element> fields) {
-        Map<Element, ClassSpecDescription> classes = fields.stream()
+    static Map<Element, ClassSpecDescription> groupedClasses(List<Element> properties)
+    {
+        Map<Element, ClassSpecDescription> classes = properties.stream()
                 .collect(groupingBy(
                         Element::getEnclosingElement,
                         collectingMethods()
@@ -122,17 +113,19 @@ public class MatcherFactoryGenerator extends AbstractProcessor {
     }
 
     /**
-     * Recursively adds to stream all fields of class of fields of nested class
+     * Recursively adds to stream all properties of class of nested class
      *
-     * @param element class/field element
-     * @return stream with fields we want to process
+     * @param element class/property element
+     * @return stream with properties we want to process
      */
-    private static Stream<Element> asFields(Element element) {
+    private static Stream<Element> asProperty(Element element)
+    {
         switch (element.getKind()) {
             case FIELD:
+            case METHOD:
                 return Stream.of(element);
             case CLASS:
-                return element.getEnclosedElements().stream().flatMap(MatcherFactoryGenerator::asFields);
+                return element.getEnclosedElements().stream().flatMap(MatcherFactoryGenerator::asProperty);
         }
         return Stream.empty();
     }

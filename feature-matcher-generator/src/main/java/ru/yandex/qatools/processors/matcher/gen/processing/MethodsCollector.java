@@ -1,28 +1,15 @@
 package ru.yandex.qatools.processors.matcher.gen.processing;
 
-import com.squareup.javapoet.AnnotationSpec;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeSpec;
-import org.hamcrest.FeatureMatcher;
-import org.hamcrest.Matcher;
+import com.squareup.javapoet.*;
+import org.hamcrest.*;
 import ru.yandex.qatools.processors.matcher.gen.MatcherFactoryGenerator;
 import ru.yandex.qatools.processors.matcher.gen.bean.ClassSpecDescription;
 
 import javax.annotation.Generated;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.Modifier;
+import javax.lang.model.element.*;
 import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.*;
 import java.util.stream.Collector;
 
 import static ru.yandex.qatools.processors.matcher.gen.processing.Naming.withGeneratedSuffix;
@@ -61,12 +48,12 @@ public class MethodsCollector implements Collector<Element, LinkedList<Element>,
     @Override
     public Function<LinkedList<Element>, ClassSpecDescription> finisher() {
         return (LinkedList<Element> collected) -> {
-            Element classOfField = collected.getFirst().getEnclosingElement();
+            Element classOfProperty = collected.getFirst().getEnclosingElement();
 
-            TypeSpec.Builder builder = commonClassPart(classOfField);
+            TypeSpec.Builder builder = commonClassPart(classOfProperty);
             collected.stream().map(asMethodSpec()).forEach(builder::addMethod);
 
-            return new ClassSpecDescription(classOfField, builder.build());
+            return new ClassSpecDescription(classOfProperty, builder.build());
         };
     }
 
@@ -76,9 +63,10 @@ public class MethodsCollector implements Collector<Element, LinkedList<Element>,
     }
 
 
-    public static TypeSpec.Builder commonClassPart(Element classOfField) {
+    public static TypeSpec.Builder commonClassPart(Element classOfProperty)
+    {
         TypeSpec.Builder builder = TypeSpec
-                .classBuilder(withGeneratedSuffix(classOfField.getSimpleName()))
+                .classBuilder(withGeneratedSuffix(classOfProperty.getSimpleName()))
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addMethod(
                         MethodSpec.constructorBuilder()
@@ -92,7 +80,8 @@ public class MethodsCollector implements Collector<Element, LinkedList<Element>,
                                 .build()
                 );
 
-        if (hasParentPackageElement().test(classOfField)) {
+        if (hasParentPackageElement().test(classOfProperty))
+        {
             builder.addAnnotation(
                     AnnotationSpec.builder(Generated.class)
                             .addMember("value", "$S", MatcherFactoryGenerator.class.getCanonicalName())
@@ -106,32 +95,34 @@ public class MethodsCollector implements Collector<Element, LinkedList<Element>,
 
 
     public static Function<Element, MethodSpec> asMethodSpec() {
-        return field -> {
-            TypeName fieldType = TypeName.get(field.asType()).box();
-            TypeName ownerType = TypeName.get(field.getEnclosingElement().asType());
+        return property ->
+        {
+            boolean isGetter = property instanceof ExecutableElement;
+            TypeName propertyType = TypeName.get(isGetter ? ((ExecutableElement)property).getReturnType() : property.asType()).box();
+            TypeName ownerType = TypeName.get(property.getEnclosingElement().asType());
             ParameterizedTypeName returnType = ParameterizedTypeName.get(ClassName.get(Matcher.class), ownerType);
             ParameterSpec matcher = ParameterSpec.builder(
-                    ParameterizedTypeName.get(ClassName.get(Matcher.class), fieldType),
+                    ParameterizedTypeName.get(ClassName.get(Matcher.class), propertyType),
                     "matcher"
             ).build();
 
-            return MethodSpec.methodBuilder("with" + Naming.normalize(field.getSimpleName()))
+            return MethodSpec.methodBuilder("with" + Naming.normalize(property.getSimpleName()))
                     .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                     .addParameter(matcher)
                     .returns(returnType)
-                    .addJavadoc("Matcher for {@link $T#$L}\n", ownerType, field.getSimpleName())
+                    .addJavadoc("Matcher for {@link $T#$L}\n", ownerType, property.getSimpleName())
                     .addStatement("return $L",
                             TypeSpec.anonymousClassBuilder(
                                     "$N, $S, $S",
                                     matcher,
-                                    field.getSimpleName(),
-                                    field.getSimpleName()
+                                    property.getSimpleName(),
+                                    property.getSimpleName()
                             )
                                     .addSuperinterface(
                                             ParameterizedTypeName.get(
                                                     ClassName.get(FeatureMatcher.class),
                                                     ownerType,
-                                                    fieldType
+                                                    propertyType
                                             )
                                     )
                                     .addMethod(
@@ -139,11 +130,11 @@ public class MethodsCollector implements Collector<Element, LinkedList<Element>,
                                                     .addAnnotation(Override.class)
                                                     .addModifiers(Modifier.PUBLIC)
                                                     .addParameter(ownerType, "actual")
-                                                    .returns(fieldType)
+                                                    .returns(propertyType)
                                                     .addStatement(
-                                                            "return $L.get$L()",
+                                                            isGetter ? "return $L.$L()" : "return $L.get$L()",
                                                             "actual",
-                                                            Naming.normalize(field.getSimpleName())
+                                                            Naming.normalize(property.getSimpleName())
                                                     )
                                                     .build()
                                     ).build()

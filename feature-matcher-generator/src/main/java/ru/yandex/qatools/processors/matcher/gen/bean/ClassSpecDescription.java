@@ -1,19 +1,16 @@
 package ru.yandex.qatools.processors.matcher.gen.bean;
 
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.*;
 import ru.yandex.qatools.processors.matcher.gen.elements.ElementParentsIterable;
 import ru.yandex.qatools.processors.matcher.gen.processing.MethodsCollector;
 
-import javax.lang.model.element.Element;
-import javax.lang.model.element.PackageElement;
-import java.util.Comparator;
-import java.util.Map;
+import javax.lang.model.element.*;
+import java.util.*;
 
 import static ru.yandex.qatools.processors.matcher.gen.processing.ProcessingPredicates.hasParentPackageElement;
 
 /**
- * Bean to store info about class. Stores fields methods list (returning matchers)
+ * Bean to store info about class. Stores properties methods list (returning matchers)
  * Contains some methods to simplify processing
  *
  * @author lanwen (Merkushev Kirill)

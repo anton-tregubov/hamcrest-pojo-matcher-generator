@@ -16,10 +16,11 @@ final class Naming {
     /**
      * Used in template processing
      *
-     * @param name field name
+     * @param name property name
      * @return capitalized name with avoiding collisions for getClass() method
      */
     static String normalize(CharSequence name) {
+//        todo here
         return capitalize(name.toString().replaceFirst("^_", ""))
                 .replaceFirst("^Class$", "Class_");
     }

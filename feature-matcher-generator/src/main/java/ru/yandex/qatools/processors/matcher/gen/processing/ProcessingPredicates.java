@@ -4,8 +4,7 @@ import ru.yandex.qatools.processors.matcher.gen.annotations.DoNotGenerateMatcher
 import ru.yandex.qatools.processors.matcher.gen.bean.ClassSpecDescription;
 import ru.yandex.qatools.processors.matcher.gen.elements.ElementParentsIterable;
 
-import javax.lang.model.element.Element;
-import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.*;
 import java.util.function.Predicate;
 
 import static java.util.Objects.nonNull;
@@ -19,7 +18,7 @@ public final class ProcessingPredicates {
      * Walks through parent chain and if any contains
      * {@link DoNotGenerateMatcher} annotation, skips this element
      *
-     * @return predicate to help filter fields for matcher generation
+     * @return predicate to help filter properties for matcher generation
      */
     public static Predicate<Element> shouldGenerateMatcher() {
         return element -> ElementParentsIterable.stream(element)
