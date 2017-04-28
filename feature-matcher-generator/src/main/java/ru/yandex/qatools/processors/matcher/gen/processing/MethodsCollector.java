@@ -134,7 +134,7 @@ public class MethodsCollector implements Collector<Element, LinkedList<Element>,
                                                     .addStatement(
                                                             isGetter ? "return $L.$L()" : "return $L.get$L()",
                                                             "actual",
-                                                            Naming.normalize(property.getSimpleName())
+                                                            isGetter ? property.getSimpleName() : Naming.normalize(property.getSimpleName())
                                                     )
                                                     .build()
                                     ).build()

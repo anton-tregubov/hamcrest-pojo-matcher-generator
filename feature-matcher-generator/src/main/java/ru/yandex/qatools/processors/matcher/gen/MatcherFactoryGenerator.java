@@ -7,6 +7,7 @@ import ru.yandex.qatools.processors.matcher.gen.processing.*;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
+import javax.lang.model.type.TypeKind;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.util.*;
@@ -121,9 +122,20 @@ public class MatcherFactoryGenerator extends AbstractProcessor {
     private static Stream<Element> asProperty(Element element)
     {
         switch (element.getKind()) {
-            case FIELD:
             case METHOD:
+                ExecutableElement executableElement = (ExecutableElement)element;
+                String methodName = executableElement.getSimpleName().toString();
+                boolean noParameters = executableElement.getParameters().isEmpty();
+                boolean noGenerics = executableElement.getTypeParameters().isEmpty();
+                boolean notVoid = executableElement.getReturnType().getKind() != TypeKind.VOID;
+                boolean beanMethod = methodName.startsWith("get") || methodName.startsWith("is");
+                if (!noParameters || !noGenerics || !notVoid || !beanMethod)
+                {
+                    return Stream.empty();
+                }
+            case FIELD:
                 return Stream.of(element);
+            case INTERFACE:
             case CLASS:
                 return element.getEnclosedElements().stream().flatMap(MatcherFactoryGenerator::asProperty);
         }

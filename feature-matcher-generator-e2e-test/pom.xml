@@ -54,6 +54,9 @@
                         <annotationProcessor>
                             ru.yandex.qatools.processors.matcher.gen.MatcherFactoryGenerator
                         </annotationProcessor>
+                        <annotationProcessor>
+                            org.immutables.processor.ProxyProcessor
+                        </annotationProcessor>
                     </annotationProcessors>
                 </configuration>
             </plugin>
